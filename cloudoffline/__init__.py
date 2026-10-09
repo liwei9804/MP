@@ -436,8 +436,21 @@ class CloudOffline(_PluginBase):
 
         logger.info(f"【CloudOffline】拦截到下载事件: [{title}]")
 
-        # 准确解析分类与目标 CID
-        target_cid, category_name = self._client.resolve_target_cid(self._root_cid, media_info or meta_info)
+        # 尝试补全 media_info
+        if not media_info and meta_info:
+            try:
+                media_info = MediaChain().recognize_by_meta(meta_info)
+            except Exception:
+                pass
+        if not media_info and title:
+            try:
+                from app.core.metainfo import MetaInfo
+                media_info = MediaChain().recognize_by_meta(MetaInfo(title=title))
+            except Exception:
+                pass
+
+        # 准确解析分类与目标 CID（自动归集到剧集中文目录）
+        target_cid, category_name = self._client.resolve_target_cid(self._root_cid, media_info, meta_info)
 
         success = False
         msg = ""
